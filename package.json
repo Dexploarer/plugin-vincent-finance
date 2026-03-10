@@ -1,0 +1,62 @@
+{
+  "name": "@milady-plugins/vincent-finance",
+  "version": "0.1.0",
+  "description": "Vincent-powered Hyperliquid trading and Polymarket prediction market integration for milady",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "lint": "biome check src/",
+    "lint:fix": "biome check --write src/",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.12.0",
+    "zod": "^3.24.0"
+  },
+  "peerDependencies": {
+    "@elizaos/core": "^1.0.0"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.0.0",
+    "@elizaos/core": "^1.0.0",
+    "tsup": "^8.4.0",
+    "typescript": "^5.9.0",
+    "vitest": "^3.0.0"
+  },
+  "agentConfig": {
+    "pluginType": "elizaos:plugin:1.0.0",
+    "pluginParameters": {
+      "VINCENT_APP_ID": {
+        "type": "string",
+        "description": "Vincent App ID from the on-chain App Registry",
+        "required": true
+      },
+      "VINCENT_MCP_TRANSPORT": {
+        "type": "string",
+        "description": "MCP transport mode: 'stdio' or 'http'",
+        "default": "stdio"
+      },
+      "VINCENT_MCP_SERVER_URL": {
+        "type": "string",
+        "description": "Vincent MCP server URL (required when transport is 'http')"
+      },
+      "VINCENT_MCP_SERVER_BIN": {
+        "type": "string",
+        "description": "Path to Vincent MCP server binary (STDIO mode)",
+        "default": "npx @lit-protocol/vincent-mcp-server"
+      }
+    }
+  }
+}
