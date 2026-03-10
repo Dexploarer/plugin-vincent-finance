@@ -11,7 +11,7 @@ import { PLUGIN_NAME } from "../types.js";
 
 const VINCENT_CONNECT_BASE = "https://connect.vincent.lit.dev";
 
-const examples: ActionExample[] = [
+const examples: ActionExample[][] = [
   [
     {
       name: "{{user1}}",
@@ -64,7 +64,7 @@ export const configurePolicy: Action = {
   validate: async (
     runtime: IAgentRuntime,
     message: Memory,
-    _state: State
+    _state?: State
   ): Promise<boolean> => {
     const text = (message.content?.text ?? "").toLowerCase();
     const keywords = [
@@ -87,13 +87,13 @@ export const configurePolicy: Action = {
   handler: async (
     runtime: IAgentRuntime,
     message: Memory,
-    state: State,
-    _options: any,
-    callback: HandlerCallback
+    state?: State,
+    _options?: Record<string, unknown>,
+    callback?: HandlerCallback
   ) => {
-    const appId = runtime.getSetting("VINCENT_APP_ID");
+    const appId = String(runtime.getSetting("VINCENT_APP_ID") ?? "");
     if (!appId) {
-      await callback({
+      await callback?.({
         text: "VINCENT_APP_ID is not configured. Cannot generate Connect URL.",
         action: "CONFIGURE_POLICY",
       });
@@ -105,8 +105,8 @@ export const configurePolicy: Action = {
 
     // ── Build Connect Page URL ─────────────────────────────────────
     const params = new URLSearchParams({
-      app_id: appId,
-      redirect_uri: `${runtime.getSetting("VINCENT_CALLBACK_URL") ?? "/auth/vincent/callback"}`,
+      app_id: String(appId),
+      redirect_uri: String(runtime.getSetting("VINCENT_CALLBACK_URL") ?? "/auth/vincent/callback"),
     });
 
     // If user asked about specific limits, try to extract and pre-fill
@@ -122,7 +122,7 @@ export const configurePolicy: Action = {
 
     // ── Respond with context-appropriate message ───────────────────
     if (hasExistingSession) {
-      await callback({
+      await callback?.({
         text:
           `You already have an active Vincent session. To update your policy parameters, ` +
           `visit the Vincent Connect page:\n\n${connectUrl}\n\n` +
@@ -130,7 +130,7 @@ export const configurePolicy: Action = {
         action: "CONFIGURE_POLICY",
       });
     } else {
-      await callback({
+      await callback?.({
         text:
           `To authorize delegated trading, connect your wallet through Vincent:\n\n` +
           `${connectUrl}\n\n` +

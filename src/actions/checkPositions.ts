@@ -14,7 +14,7 @@ import type {
   CrossVenuePortfolio,
 } from "../types.js";
 
-const examples: ActionExample[] = [
+const examples: ActionExample[][] = [
   [
     {
       name: "{{user1}}",
@@ -64,7 +64,7 @@ export const checkPositions: Action = {
   validate: async (
     runtime: IAgentRuntime,
     message: Memory,
-    _state: State
+    _state?: State
   ): Promise<boolean> => {
     const mcp = runtime.getService<VincentMCPService>("vincent-mcp");
     if (!mcp || !mcp.isConnected() || !mcp.isSessionValid()) return false;
@@ -89,13 +89,13 @@ export const checkPositions: Action = {
   handler: async (
     runtime: IAgentRuntime,
     message: Memory,
-    _state: State,
-    _options: any,
-    callback: HandlerCallback
+    _state?: State,
+    _options?: Record<string, unknown>,
+    callback?: HandlerCallback
   ) => {
     const mcp = runtime.getService<VincentMCPService>("vincent-mcp");
     if (!mcp) {
-      await callback({
+      await callback?.({
         text: "Vincent MCP service is not available.",
         action: "CHECK_POSITIONS",
       });
@@ -212,7 +212,7 @@ export const checkPositions: Action = {
         },
       };
 
-      await callback({
+      await callback?.({
         text: lines.join("\n"),
         action: "CHECK_POSITIONS",
       });
@@ -221,7 +221,7 @@ export const checkPositions: Action = {
     } catch (error) {
       const msg =
         error instanceof Error ? error.message : "Failed to fetch positions";
-      await callback({
+      await callback?.({
         text: `Error fetching positions: ${msg}`,
         action: "CHECK_POSITIONS",
       });

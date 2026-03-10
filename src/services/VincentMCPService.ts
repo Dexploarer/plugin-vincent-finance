@@ -67,8 +67,7 @@ export class VincentMCPService extends Service {
 
   private client: Client | null = null;
   private transport: StdioClientTransport | SSEClientTransport | null = null;
-  private config: VincentMCPConfig | null = null;
-  private runtime: IAgentRuntime | null = null;
+  private mcpConfig: VincentMCPConfig | null = null;
   private circuitBreaker: CircuitBreaker = createCircuitBreaker();
   private healthCheckTimer: ReturnType<typeof setInterval> | null = null;
   private session: VincentSession | null = null;
@@ -77,7 +76,7 @@ export class VincentMCPService extends Service {
   // ── Lifecycle ────────────────────────────────────────────────────
 
   static async start(runtime: IAgentRuntime): Promise<Service> {
-    const instance = new VincentMCPService();
+    const instance = new VincentMCPService(runtime);
     await instance.initialize(runtime);
     return instance;
   }
@@ -85,18 +84,22 @@ export class VincentMCPService extends Service {
   private async initialize(runtime: IAgentRuntime): Promise<void> {
     this.runtime = runtime;
 
-    this.config = {
-      transport:
-        (runtime.getSetting("VINCENT_MCP_TRANSPORT") as "stdio" | "http") ??
-        "stdio",
-      serverBin:
-        runtime.getSetting("VINCENT_MCP_SERVER_BIN") ??
-        "npx @lit-protocol/vincent-mcp-server",
-      serverUrl: runtime.getSetting("VINCENT_MCP_SERVER_URL") ?? undefined,
-      appId: runtime.getSetting("VINCENT_APP_ID") ?? "",
+    const transport = String(runtime.getSetting("VINCENT_MCP_TRANSPORT") ?? "stdio");
+    const serverBin = String(
+      runtime.getSetting("VINCENT_MCP_SERVER_BIN") ??
+        "npx @lit-protocol/vincent-mcp-server"
+    );
+    const serverUrl = runtime.getSetting("VINCENT_MCP_SERVER_URL");
+    const appId = String(runtime.getSetting("VINCENT_APP_ID") ?? "");
+
+    this.mcpConfig = {
+      transport: transport as "stdio" | "http",
+      serverBin,
+      serverUrl: serverUrl != null ? String(serverUrl) : undefined,
+      appId,
     };
 
-    if (!this.config.appId) {
+    if (!this.mcpConfig.appId) {
       throw new Error(
         `[${PLUGIN_NAME}] VINCENT_APP_ID is required but not set`
       );
@@ -117,31 +120,31 @@ export class VincentMCPService extends Service {
   // ── Connection Management ────────────────────────────────────────
 
   private async connect(): Promise<void> {
-    if (!this.config) throw new Error("Service not initialized");
+    if (!this.mcpConfig) throw new Error("Service not initialized");
 
     this.client = new Client(
       { name: PLUGIN_NAME, version: "0.1.0" },
-      { capabilities: { tools: {}, resources: {} } }
+      { capabilities: {} }
     );
 
-    if (this.config.transport === "stdio") {
-      const [command, ...args] = (this.config.serverBin ?? "").split(" ");
+    if (this.mcpConfig.transport === "stdio") {
+      const [command, ...args] = (this.mcpConfig.serverBin ?? "").split(" ");
       this.transport = new StdioClientTransport({
         command,
         args,
         env: {
           ...process.env,
-          VINCENT_APP_ID: this.config.appId,
+          VINCENT_APP_ID: this.mcpConfig.appId,
         },
       });
     } else {
-      if (!this.config.serverUrl) {
+      if (!this.mcpConfig.serverUrl) {
         throw new Error(
           `[${PLUGIN_NAME}] VINCENT_MCP_SERVER_URL required for HTTP transport`
         );
       }
       this.transport = new SSEClientTransport(
-        new URL(this.config.serverUrl)
+        new URL(this.mcpConfig.serverUrl)
       );
     }
 
@@ -151,7 +154,7 @@ export class VincentMCPService extends Service {
     this.runtime?.emitEvent("ACTION_STARTED" as any, {
       source: PLUGIN_NAME,
       action: "mcp_connected",
-      transport: this.config.transport,
+      transport: this.mcpConfig.transport,
     });
   }
 
@@ -280,7 +283,7 @@ export class VincentMCPService extends Service {
   }
 
   getConfig(): VincentMCPConfig | null {
-    return this.config;
+    return this.mcpConfig;
   }
 }
 

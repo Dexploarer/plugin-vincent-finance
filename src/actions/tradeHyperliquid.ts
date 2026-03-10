@@ -14,7 +14,7 @@ import {
 } from "../types.js";
 import type { HLTradeParams, HLTradeResponse, RiskAssessment } from "../types.js";
 
-const examples: ActionExample[] = [
+const examples: ActionExample[][] = [
   [
     {
       name: "{{user1}}",
@@ -65,7 +65,7 @@ export const tradeHyperliquid: Action = {
   validate: async (
     runtime: IAgentRuntime,
     message: Memory,
-    _state: State
+    _state?: State
   ): Promise<boolean> => {
     // Must have MCP service running
     const mcp = runtime.getService<VincentMCPService>("vincent-mcp");
@@ -97,13 +97,13 @@ export const tradeHyperliquid: Action = {
   handler: async (
     runtime: IAgentRuntime,
     message: Memory,
-    state: State,
-    _options: any,
-    callback: HandlerCallback
+    state?: State,
+    _options?: Record<string, unknown>,
+    callback?: HandlerCallback
   ) => {
     const mcp = runtime.getService<VincentMCPService>("vincent-mcp");
     if (!mcp) {
-      await callback({
+      await callback?.({
         text: "Vincent MCP service is not available. Please ensure the plugin is properly configured.",
         action: "TRADE_HYPERLIQUID",
       });
@@ -119,7 +119,7 @@ export const tradeHyperliquid: Action = {
       });
       params = extraction as HLTradeParams;
     } catch (error) {
-      await callback({
+      await callback?.({
         text: "I couldn't parse the trade parameters from your message. Please specify the coin, direction (long/short), size, and order type.",
         action: "TRADE_HYPERLIQUID",
       });
@@ -141,7 +141,7 @@ export const tradeHyperliquid: Action = {
       );
 
       if (risk.verdict === "block") {
-        await callback({
+        await callback?.({
           text:
             `Trade blocked by policy: ${risk.reasons.join("; ")}. ` +
             `Update your Vincent consent parameters to proceed.`,
@@ -155,7 +155,7 @@ export const tradeHyperliquid: Action = {
       }
 
       if (risk.verdict === "warn" && risk.requiresConfirmation) {
-        await callback({
+        await callback?.({
           text:
             `⚠ Policy warnings before execution:\n` +
             risk.warnings.map((w) => `• ${w.message}`).join("\n") +
@@ -198,7 +198,7 @@ export const tradeHyperliquid: Action = {
           .filter(Boolean)
           .join("\n");
 
-        await callback({ text: summary, action: "TRADE_HYPERLIQUID" });
+        await callback?.({ text: summary, action: "TRADE_HYPERLIQUID" });
 
         // Persist trade to memory for future context
         await runtime.createMemory(
@@ -221,7 +221,7 @@ export const tradeHyperliquid: Action = {
         return { success: true, data: { params, response } };
       }
 
-      await callback({
+      await callback?.({
         text: `Trade failed: ${response.error ?? "Unknown error from Hyperliquid"}`,
         action: "TRADE_HYPERLIQUID",
       });
@@ -229,7 +229,7 @@ export const tradeHyperliquid: Action = {
     } catch (error) {
       const msg =
         error instanceof Error ? error.message : "MCP communication error";
-      await callback({
+      await callback?.({
         text: `Trade execution error: ${msg}`,
         action: "TRADE_HYPERLIQUID",
       });

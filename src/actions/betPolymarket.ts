@@ -14,7 +14,7 @@ import {
 } from "../types.js";
 import type { PMBetParams, PMBetResponse, RiskAssessment } from "../types.js";
 
-const examples: ActionExample[] = [
+const examples: ActionExample[][] = [
   [
     {
       name: "{{user1}}",
@@ -65,7 +65,7 @@ export const betPolymarket: Action = {
   validate: async (
     runtime: IAgentRuntime,
     message: Memory,
-    _state: State
+    _state?: State
   ): Promise<boolean> => {
     const mcp = runtime.getService<VincentMCPService>("vincent-mcp");
     if (!mcp || !mcp.isConnected() || !mcp.isSessionValid()) return false;
@@ -90,13 +90,13 @@ export const betPolymarket: Action = {
   handler: async (
     runtime: IAgentRuntime,
     message: Memory,
-    state: State,
-    _options: any,
-    callback: HandlerCallback
+    state?: State,
+    _options?: Record<string, unknown>,
+    callback?: HandlerCallback
   ) => {
     const mcp = runtime.getService<VincentMCPService>("vincent-mcp");
     if (!mcp) {
-      await callback({
+      await callback?.({
         text: "Vincent MCP service is not available.",
         action: "BET_POLYMARKET",
       });
@@ -112,7 +112,7 @@ export const betPolymarket: Action = {
       });
       params = extraction as PMBetParams;
     } catch {
-      await callback({
+      await callback?.({
         text: "I couldn't parse the bet parameters. Please specify the market, side (YES/NO), and amount in USDC.",
         action: "BET_POLYMARKET",
       });
@@ -133,7 +133,7 @@ export const betPolymarket: Action = {
       );
 
       if (risk.verdict === "block") {
-        await callback({
+        await callback?.({
           text:
             `Bet blocked by policy: ${risk.reasons.join("; ")}. ` +
             `Update your Vincent consent parameters to proceed.`,
@@ -143,7 +143,7 @@ export const betPolymarket: Action = {
       }
 
       if (risk.verdict === "warn" && risk.requiresConfirmation) {
-        await callback({
+        await callback?.({
           text:
             `⚠ Policy warnings:\n` +
             risk.warnings.map((w) => `• ${w.message}`).join("\n") +
@@ -185,7 +185,7 @@ export const betPolymarket: Action = {
           .filter(Boolean)
           .join("\n");
 
-        await callback({ text: summary, action: "BET_POLYMARKET" });
+        await callback?.({ text: summary, action: "BET_POLYMARKET" });
 
         await runtime.createMemory(
           {
@@ -207,7 +207,7 @@ export const betPolymarket: Action = {
         return { success: true, data: { params, response } };
       }
 
-      await callback({
+      await callback?.({
         text: `Bet failed: ${response.error ?? "Unknown error from Polymarket"}`,
         action: "BET_POLYMARKET",
       });
@@ -215,7 +215,7 @@ export const betPolymarket: Action = {
     } catch (error) {
       const msg =
         error instanceof Error ? error.message : "MCP communication error";
-      await callback({
+      await callback?.({
         text: `Bet execution error: ${msg}`,
         action: "BET_POLYMARKET",
       });

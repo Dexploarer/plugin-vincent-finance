@@ -11,7 +11,9 @@
       "types": "./dist/index.d.ts"
     }
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
@@ -23,14 +25,15 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.12.0",
-    "zod": "^3.24.0"
+    "zod": "^4.3.6"
   },
   "peerDependencies": {
-    "@elizaos/core": "^1.0.0"
+    "@elizaos/core": ">=2.0.0-alpha.0"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.0.0",
-    "@elizaos/core": "^1.0.0",
+    "@elizaos/core": "^2.0.0-alpha.33",
+    "@types/node": "^25.4.0",
     "tsup": "^8.4.0",
     "typescript": "^5.9.0",
     "vitest": "^3.0.0"

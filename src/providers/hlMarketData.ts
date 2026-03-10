@@ -1,4 +1,4 @@
-import type { Provider, IAgentRuntime, Memory, State } from "@elizaos/core";
+import type { Provider, IAgentRuntime, Memory, State, ProviderResult } from "@elizaos/core";
 import { VincentMCPService } from "../services/VincentMCPService.js";
 import { DEFAULTS } from "../types.js";
 import type { HLMarketDataEntry } from "../types.js";
@@ -39,7 +39,7 @@ export const hlMarketData: Provider = {
     runtime: IAgentRuntime,
     _message: Memory,
     _state: State
-  ): Promise<{ text: string; data: Record<string, unknown> }> => {
+  ): Promise<ProviderResult> => {
     const mcp = runtime.getService<VincentMCPService>("vincent-mcp");
     if (!mcp || !mcp.isConnected()) {
       return {
@@ -77,7 +77,7 @@ export const hlMarketData: Provider = {
 function formatMarketData(
   entries: HLMarketDataEntry[],
   stale = false
-): { text: string; data: Record<string, unknown> } {
+): ProviderResult {
   if (!entries.length) {
     return {
       text: "No Hyperliquid market data available.",

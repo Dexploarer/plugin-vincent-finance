@@ -3,6 +3,7 @@ import type {
   IAgentRuntime,
   Memory,
   State,
+  EvaluationExample,
 } from "@elizaos/core";
 import { VincentMCPService } from "../services/VincentMCPService.js";
 import { MCP_RESOURCES, DEFAULTS } from "../types.js";
@@ -42,10 +43,12 @@ export const riskAssessor: Evaluator = {
     "session health. Warns the agent before trades would hit hard limits.",
   similes: ["RISK_CHECK", "POLICY_MONITOR"],
 
+  examples: [] as EvaluationExample[],
+
   validate: async (
     runtime: IAgentRuntime,
     message: Memory,
-    _state: State
+    _state?: State
   ): Promise<boolean> => {
     // Run after any message in a room where trading has occurred
     const mcp = runtime.getService<VincentMCPService>("vincent-mcp");
@@ -55,11 +58,11 @@ export const riskAssessor: Evaluator = {
   handler: async (
     runtime: IAgentRuntime,
     message: Memory,
-    state: State
-  ): Promise<{ text: string; data?: Record<string, unknown> }> => {
+    state?: State
+  ) => {
     const mcp = runtime.getService<VincentMCPService>("vincent-mcp");
     if (!mcp) {
-      return { text: "" };
+      return { success: true, text: "" };
     }
 
     const warnings: PolicyWarning[] = [];
@@ -69,6 +72,7 @@ export const riskAssessor: Evaluator = {
     const session = mcp.getSession();
     if (!session) {
       return {
+        success: false,
         text: "No active Vincent session. User must connect via Vincent Connect page before trading.",
         data: {
           verdict: "block" as RiskVerdict,
@@ -93,6 +97,7 @@ export const riskAssessor: Evaluator = {
     const cbState = mcp.getCircuitBreakerState();
     if (cbState === "open") {
       return {
+        success: false,
         text: "MCP circuit breaker is OPEN — the Vincent server is unreachable. Trading is temporarily suspended.",
         data: {
           verdict: "block" as RiskVerdict,
@@ -163,6 +168,7 @@ export const riskAssessor: Evaluator = {
 
     if (warnings.length === 0) {
       return {
+        success: true,
         text: "",
         data: { assessment },
       };
@@ -170,6 +176,7 @@ export const riskAssessor: Evaluator = {
 
     const text = warnings.map((w) => `⚠ ${w.message}`).join("\n");
     return {
+      success: verdict !== "block",
       text,
       data: { assessment },
     };
